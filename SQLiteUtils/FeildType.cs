@@ -23,14 +23,27 @@ namespace SQLiteUtils
 
 	public static class FeildTypeUtils
 	{
-		internal static Option<(FieldType, object)> ReadValue(ref SqliteDataReader reader, int ordinal)
+		internal static Option<(FieldType, object)> ReadValue(SqliteDataReader reader, int ordinal)
 		{
 			string typeName = reader.GetDataTypeName(ordinal);
 			return FromName(typeName).Match(
 				ok =>
 				{
-					object value = ok switch { };
-					return new Option<(FieldType, object)>((ok, value));
+					object value = ok switch
+					{
+						FieldType.Int => reader.GetInt32(ordinal),
+						FieldType.Long => reader.GetInt64(ordinal),
+						FieldType.ULong => reader.GetFieldValue<ulong>(ordinal),
+						FieldType.String => reader.GetString(ordinal),
+						FieldType.Float => reader.GetFloat(ordinal),
+						FieldType.Double => throw new NotImplementedException(),
+						FieldType.Decimal => throw new NotImplementedException(),
+						FieldType.Bool => throw new NotImplementedException(),
+						FieldType.DateTime => throw new NotImplementedException(),
+						_ => throw new NotImplementedException(),
+					};
+
+					return (ok, value);
 				},
 				() =>
 				{
