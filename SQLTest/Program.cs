@@ -1,20 +1,38 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using Raucse;
+﻿using Raucse;
+using Raucse.Strings;
 using SQLiteUtils;
 
 const string DB_NAME = "my_database";
-string GetInsertCommand(string tableName) =>
-	$@"CREATE TABLE IF NOT EXISTS {tableName};
-	   INSERT INTO {tableName} (name TEXT, id INTAGER) VALUES ('test guy', 37490);
-	   SELECT * FROM {tableName};";
+
+static string GetInsertCommand(string tableName) =>
+	$"CREATE TABLE IF NOT EXISTS {tableName} (name TEXT, id INTAGER);\n" +
+	$"INSERT INTO {tableName} (name, id) VALUES ('test guy', 37490);\n" +
+	$"SELECT * FROM {tableName}";
 
 DBHandle handle = new DBHandle(DB_NAME);
-DBQueryResult result = handle.ExecuteReadCommand(GetInsertCommand("test_table"));
-foreach(var obj in result.Objects)
-{
-	foreach(var (name, field) in obj)
+string command = GetInsertCommand("test_table");
+handle.ExecuteReadCommand(command).Match(
+	ok =>
 	{
-		ConsoleHelper.WriteMessage($"column name: {name}; field type: {field.Type}; field value: {field.Value}");
-	}
-}
+		foreach (var obj in ok.Objects)
+		{
+			foreach (var (name, field) in obj)
+			{
+				ConsoleHelper.WriteMessage($"column name: {name}; field type: {field.Type}; field value: {field.Value.Value}");
+			}
+		}
+	},
+	fail =>
+	{
+		StringMaker maker = new StringMaker();
+		maker.AppendLine("Source: ");
+		maker.TabIn(TabModes.Number);
+		maker.AppendLines(command.Split('\n'));
+		maker.TabOut();
+		maker.AppendLine("Error:");
+		maker.TabIn(TabModes.Bulleted);
+		maker.AppendLines(fail.Message.Split('\n'));
+		maker.TabOut();
+		ConsoleHelper.WriteError(maker.ToString());
+	});
+

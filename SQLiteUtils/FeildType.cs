@@ -1,10 +1,11 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Data.SQLite;
 using Raucse;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace SQLiteUtils
 {
@@ -16,17 +17,16 @@ namespace SQLiteUtils
 		String,
 		Float,
 		Double,
-		Decimal,
 		Bool,
 		DateTime,
 	}
 
 	public static class FieldTypeUtils
 	{
-		internal static Option<(FieldType, Option<object>)> ReadValue(SqliteDataReader reader, int ordinal)
+		public static Option<(FieldType, Option<object>)> ReadValue(SQLiteDataReader reader, int ordinal)
 		{
 			string typeName = reader.GetDataTypeName(ordinal);
-			return FromName(typeName).Match(
+			return FromSQLTypeName(typeName).Match(
 				ok =>
 				{
 					if (reader.IsDBNull(ordinal))
@@ -40,7 +40,6 @@ namespace SQLiteUtils
 						FieldType.String => reader.GetString(ordinal),
 						FieldType.Float => reader.GetFloat(ordinal),
 						FieldType.Double => reader.GetDouble(ordinal),
-						FieldType.Decimal => reader.GetDecimal(ordinal),
 						FieldType.Bool => reader.GetBoolean(ordinal),
 						FieldType.DateTime => reader.GetDateTime(ordinal),
 						_ => throw new NotImplementedException(),
@@ -53,8 +52,33 @@ namespace SQLiteUtils
 					return new Option<(FieldType, Option<object>)>();
 				});
 		}
+		public static Option<FieldType> FromCSType(Type type)
+		{
+			return Type.GetTypeCode(type) switch
+			{
+				TypeCode.Empty => throw new NotImplementedException(),
+				TypeCode.Object => throw new NotImplementedException(),
+				TypeCode.DBNull => throw new NotImplementedException(),
+				TypeCode.Boolean => FieldType.Bool,
+				TypeCode.Char => FieldType.String,
+				TypeCode.SByte => FieldType.Int,
+				TypeCode.Byte => FieldType.Int,
+				TypeCode.Int16 => FieldType.Int,
+				TypeCode.UInt16 => FieldType.Int,
+				TypeCode.Int32 => FieldType.Int,
+				TypeCode.UInt32 => FieldType.Int,
+				TypeCode.Int64 => FieldType.Long,
+				TypeCode.UInt64 => FieldType.ULong,
+				TypeCode.Single => FieldType.Float,
+				TypeCode.Double => FieldType.Double,
+				TypeCode.Decimal => throw new NotImplementedException(),
+				TypeCode.DateTime => FieldType.DateTime,
+				TypeCode.String => FieldType.String,
+				_ => throw new NotImplementedException(),
+			};
+		}
 
-		internal static Option<FieldType> FromName(string typeName)
+		public static Option<FieldType> FromSQLTypeName(string typeName)
 		{
 			string sqlTypeName = typeName.ToUpper();
 			if (sqlTypeName == "INT"		||
@@ -88,17 +112,14 @@ namespace SQLiteUtils
 			else if (sqlTypeName == "DOUBLE" ||
 					 sqlTypeName == "PRECISION" ||
 					 sqlTypeName == "REAL" ||
-					 sqlTypeName == "NUMERIC")
+					 sqlTypeName == "NUMERIC" ||
+					 sqlTypeName.StartsWith("DECIMAL"))
 			{
 				return FieldType.Double;
 			}
 			else if (sqlTypeName == "FLOAT")
 			{
 				return FieldType.Float;
-			}
-			else if (sqlTypeName.StartsWith("DECIMAL"))
-			{
-				return FieldType.Decimal;
 			}
 			else if (sqlTypeName == "BOOLEAN")
 			{
@@ -112,6 +133,23 @@ namespace SQLiteUtils
 			{
 				return new Option<FieldType>();
 			}
+		}
+
+		public static string ToSQLTypeName(this FieldType fieldType)
+		{
+			return fieldType switch
+			{
+				FieldType.Int => "INT",
+				FieldType.Long => "BIGINT",
+				FieldType.ULong => "UNSIGNED BIG INT",
+				FieldType.String => "TEXT",
+				FieldType.Float => "FLOAT",
+				FieldType.Double => "DOUBLE",
+				FieldType.Bool => "BOOLEAN",
+				FieldType.DateTime => "DATETIME",
+				_ => throw new NotImplementedException(),
+			};
+
 		}
 	}
 }

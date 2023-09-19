@@ -1,17 +1,18 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Data.SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Raucse;
 
 namespace SQLiteUtils
 {
 	public class DBHandle
 	{
 		public readonly string Name;
-		private readonly SqliteConnection m_Connection;
+		private readonly SQLiteConnection m_Connection;
 
 		public DBHandle(string name)
 		{
@@ -19,7 +20,7 @@ namespace SQLiteUtils
 			m_Connection = GetConnection(name);
 		}
 
-		public DBHandle(string name, SqliteConnection connection)
+		public DBHandle(string name, SQLiteConnection connection)
 		{
 			Name = name;
 			m_Connection = connection;
@@ -29,7 +30,7 @@ namespace SQLiteUtils
 		{
 			m_Connection.Open();
 
-			using SqliteCommand command = m_Connection.CreateCommand();
+			using SQLiteCommand command = m_Connection.CreateCommand();
 			command.CommandText = commandString;
 			int changedRows = command.ExecuteNonQuery();
 			m_Connection.Close();
@@ -37,25 +38,33 @@ namespace SQLiteUtils
 			return changedRows;
 		}
 
-		public DBQueryResult ExecuteReadCommand(string commandString)
+		public Result<DBQueryResult, SQLiteException> ExecuteReadCommand(string commandString)
 		{
 			m_Connection.Open();
-			using SqliteCommand command = m_Connection.CreateCommand();
+			using SQLiteCommand command = m_Connection.CreateCommand();
 			command.CommandText = commandString;
-			using SqliteDataReader reader = command.ExecuteReader();
-
-			DBQueryResult result = new DBQueryResult(reader);
-
-			m_Connection.Close();
-			return result;
+			try
+			{
+				using SQLiteDataReader reader = command.ExecuteReader();
+				DBQueryResult result = new DBQueryResult(reader);
+				return result;
+			}
+			catch (SQLiteException e)
+			{
+				return e;
+			}
+			finally
+			{
+				m_Connection.Close();
+			}
 		}
 
-		private static SqliteConnection GetConnection(string databaseName)
+		private static SQLiteConnection GetConnection(string databaseName)
 		{
 			string location = Assembly.GetExecutingAssembly().Location;
 			string? folder = Path.GetDirectoryName(location);
 			string uri = $"{folder}\\{databaseName}.db";
-			return new SqliteConnection($"URI=file:{uri}");
+			return new SQLiteConnection($"URI=file:{uri}");
 		}
 	}
 }

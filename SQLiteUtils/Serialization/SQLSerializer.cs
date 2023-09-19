@@ -11,22 +11,14 @@ namespace SQLiteUtils.Serialization
 {
 	public static class SQLSerializer
 	{
-		private enum PrimativeType
-		{
-			Int32,
-			Float,
-			String,
-			Bool,
-		}
-
 		private class FieldData
 		{
 			public readonly string Name;
-			public readonly PrimativeType Type;
+			public readonly FieldType Type;
 			public readonly Option<uint> CustomStringCapacity;
 			public readonly object Value;
 
-			private FieldData(string name, PrimativeType type, Option<uint> customStrCap, object value)
+			private FieldData(string name, FieldType type, Option<uint> customStrCap, object value)
 			{
 				Name = name;
 				Type = type;
@@ -37,12 +29,11 @@ namespace SQLiteUtils.Serialization
 			public static FieldData FromInfo(FieldInfo info, object parent)
 			{
 				var name = info.Name;
-				var type = GetPrimativeFromType(info.FieldType);
+				var type = FieldTypeUtils.FromCSType(info.FieldType).Value;
 				var attrib = info.GetCustomAttribute<SQLVarChar>();
 				Option<uint> customStrCap = new Option<uint>();
 				if (attrib is not null)
 					customStrCap = attrib.Size;
-
 
 				var value = info.GetValue(parent)!;
 				return new FieldData(name, type, customStrCap, value);
@@ -65,7 +56,7 @@ namespace SQLiteUtils.Serialization
 		{
 			return typeof(T).GetFields()
 					.Where(f => f.GetCustomAttribute<SQLSerializableField>() != null)
-					.Select(f => $"{f.Name} {CreateValueTypeString(GetPrimativeFromType(f.FieldType))}")
+					.Select(f => $"{f.Name} {FieldTypeUtils.FromCSType(f.FieldType).Value.ToSQLTypeName()}")
 					.ToArray();
 		}
 
@@ -88,55 +79,26 @@ namespace SQLiteUtils.Serialization
 			return command;
 		}
 
-		private static string CreateValueTypeString(PrimativeType type)
+		private static string CreateValueString(object value, FieldType type)
 		{
 			return type switch
 			{
-				PrimativeType.Int32 => "int",
-				PrimativeType.Float => "FLOAT",
-				PrimativeType.String => "TEXT",
-				PrimativeType.Bool => "int",
+				FieldType.Int => $"'{(int)value}'",
+				FieldType.Long => $"'{(long)value}'",
+				FieldType.ULong => $"'{(ulong)value}'",
+				FieldType.String => $"'{(string)value}'",
+				FieldType.Float => $"'{(float)value}'",
+				FieldType.Double => $"'{(double)value}'",
+				FieldType.Bool => (bool)value ? "1" : "0",
+				FieldType.DateTime => throw new NotImplementedException(),
 				_ => throw new NotImplementedException(),
 			};
-		}
-
-		private static string CreateValueString(object value, PrimativeType type)
-		{
-			return type switch
-			{
-				PrimativeType.Int32 => $"'{(int)value}'",
-				PrimativeType.Float => $"'{(float)value}'",
-				PrimativeType.String => $"'{(string)value}'",
-				PrimativeType.Bool => (((bool)value) ? "1" : "0"),
-				_ => throw new NotImplementedException(),
-			};
-		}
-
-		private static PrimativeType GetPrimativeFromType(Type type)
-		{
-			if (type == typeof(int))
-				return PrimativeType.Int32;
-			else if (type == typeof(float))
-				return PrimativeType.Float;
-			else if (type == typeof(string))
-				return PrimativeType.String;
-			else if (type == typeof(bool))
-				return PrimativeType.Bool;
-
-			throw new ArgumentException($"Type '{type.Name}' is not a supported primative type.");
 		}
 
 		private static void CheckType<T>()
 		{
 			if (typeof(T).GetCustomAttribute<SQLSerializableObject>() == null)
 				throw new ArgumentException("Type '" + typeof(T).Name + "', must have the SQLSerializeableObject attribute.");
-		}
-		private static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)
-		{
-			foreach (T item in enumeration)
-			{
-				action(item);
-			}
 		}
 	}
 }

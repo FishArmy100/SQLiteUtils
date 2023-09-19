@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Data.SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace SQLiteUtils
 	{
 		public readonly IReadOnlyList<IReadOnlyDictionary<string, DBField>> Objects;
 
-		public DBQueryResult(SqliteDataReader reader)
+		public DBQueryResult(SQLiteDataReader reader)
 		{
 			List<IReadOnlyDictionary<string, DBField>> objs = new List<IReadOnlyDictionary<string, DBField>>();
 			while (reader.Read())
