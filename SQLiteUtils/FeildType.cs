@@ -21,14 +21,17 @@ namespace SQLiteUtils
 		DateTime,
 	}
 
-	public static class FeildTypeUtils
+	public static class FieldTypeUtils
 	{
-		internal static Option<(FieldType, object)> ReadValue(SqliteDataReader reader, int ordinal)
+		internal static Option<(FieldType, Option<object>)> ReadValue(SqliteDataReader reader, int ordinal)
 		{
 			string typeName = reader.GetDataTypeName(ordinal);
 			return FromName(typeName).Match(
 				ok =>
 				{
+					if (reader.IsDBNull(ordinal))
+						return (ok, new Option<object>());
+
 					object value = ok switch
 					{
 						FieldType.Int => reader.GetInt32(ordinal),
@@ -36,10 +39,10 @@ namespace SQLiteUtils
 						FieldType.ULong => reader.GetFieldValue<ulong>(ordinal),
 						FieldType.String => reader.GetString(ordinal),
 						FieldType.Float => reader.GetFloat(ordinal),
-						FieldType.Double => throw new NotImplementedException(),
-						FieldType.Decimal => throw new NotImplementedException(),
-						FieldType.Bool => throw new NotImplementedException(),
-						FieldType.DateTime => throw new NotImplementedException(),
+						FieldType.Double => reader.GetDouble(ordinal),
+						FieldType.Decimal => reader.GetDecimal(ordinal),
+						FieldType.Bool => reader.GetBoolean(ordinal),
+						FieldType.DateTime => reader.GetDateTime(ordinal),
 						_ => throw new NotImplementedException(),
 					};
 
@@ -47,7 +50,7 @@ namespace SQLiteUtils
 				},
 				() =>
 				{
-					return new Option<(FieldType, object)>();
+					return new Option<(FieldType, Option<object>)>();
 				});
 		}
 

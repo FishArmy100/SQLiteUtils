@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace SQLiteUtils
 {
-	public class DBFeild
+	public class DBField
 	{
 		public readonly string Name;
-		public readonly Type Type;
+		public readonly FieldType Type;
 		public readonly Option<object> Value;
 
-		public DBFeild(string name, Type type, Option<object> value)
+		public DBField(string name, FieldType type, Option<object> value)
 		{
 			Name = name;
 			Type = type;

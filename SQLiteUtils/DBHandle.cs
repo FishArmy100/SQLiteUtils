@@ -25,6 +25,31 @@ namespace SQLiteUtils
 			m_Connection = connection;
 		}
 
+		public int ExecuteCommand(string commandString)
+		{
+			m_Connection.Open();
+
+			using SqliteCommand command = m_Connection.CreateCommand();
+			command.CommandText = commandString;
+			int changedRows = command.ExecuteNonQuery();
+			m_Connection.Close();
+
+			return changedRows;
+		}
+
+		public DBQueryResult ExecuteReadCommand(string commandString)
+		{
+			m_Connection.Open();
+			using SqliteCommand command = m_Connection.CreateCommand();
+			command.CommandText = commandString;
+			using SqliteDataReader reader = command.ExecuteReader();
+
+			DBQueryResult result = new DBQueryResult(reader);
+
+			m_Connection.Close();
+			return result;
+		}
+
 		private static SqliteConnection GetConnection(string databaseName)
 		{
 			string location = Assembly.GetExecutingAssembly().Location;
