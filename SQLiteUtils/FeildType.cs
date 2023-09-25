@@ -54,6 +54,9 @@ namespace SQLiteUtils
 		}
 		public static Option<FieldType> FromCSType(Type type)
 		{
+			if (Nullable.GetUnderlyingType(type) is Type underlying)
+				type = underlying;
+
 			return Type.GetTypeCode(type) switch
 			{
 				TypeCode.Empty => throw new NotImplementedException(),

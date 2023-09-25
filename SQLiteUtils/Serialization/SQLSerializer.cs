@@ -52,12 +52,25 @@ namespace SQLiteUtils.Serialization
 			return commands;
 		}
 
-		private static string[] GetTableColumns<T>()
+		public static List<T> Deserialize<T>(DBQueryResult result)
+		{
+			CheckType<T>();
+
+		}
+
+		private static (FieldType, string)[] GetFeildNames<T>()
 		{
 			return typeof(T).GetFields()
-					.Where(f => f.GetCustomAttribute<SQLSerializableField>() != null)
-					.Select(f => $"{f.Name} {FieldTypeUtils.FromCSType(f.FieldType).Value.ToSQLTypeName()}")
-					.ToArray();
+				.Where(f => f.GetCustomAttribute<SQLSerializableField>() != null)
+				.Select(f => (FieldTypeUtils.FromCSType(f.FieldType).Value, f.Name))
+				.ToArray();
+		}
+
+		private static string[] GetTableColumns<T>()
+		{
+			return GetFeildNames<T>()
+				.Select(f => $"{f.Item2} {f.Item1.ToSQLTypeName()}")
+				.ToArray();
 		}
 
 		private static List<List<FieldData>> GetTableFields<T>(IEnumerable<T> data)
@@ -99,6 +112,15 @@ namespace SQLiteUtils.Serialization
 		{
 			if (typeof(T).GetCustomAttribute<SQLSerializableObject>() == null)
 				throw new ArgumentException("Type '" + typeof(T).Name + "', must have the SQLSerializeableObject attribute.");
+
+			foreach(var field in typeof(T).GetFields())
+			{
+				if (field.GetCustomAttribute<SQLSerializableField>() == null)
+					throw new ArgumentException($"All feilds in type '{typeof(T).Name}' must be SQL Serializeable");
+
+				if (Nullable.GetUnderlyingType(typeof(T)) == null)
+					throw new ArgumentException($"All feilds in type '{typeof(T).Name}' must be nullable");
+			}
 		}
 	}
 }
