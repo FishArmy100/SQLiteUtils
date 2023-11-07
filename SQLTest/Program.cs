@@ -23,25 +23,23 @@ var employees = new List<TestEmployee>
 	new TestEmployee("robbert", "grotten", 53)
 };
 
+var updatedEmployees = new List<TestEmployee>
+{
+	new TestEmployee("bob", "dylan", 24)
+};
+
 string insertCommand = SQLSerializer.Serialize(TABLE_NAME, employees);
 
 handle.ExecuteCommand(insertCommand);
 
-handle.ExecuteReadCommand(SQLCommandHelper.ReadAll(TABLE_NAME), reader =>
-	{
-		string objString = "";
-		for(int ordinal = 0; ordinal < reader.FieldCount; ordinal++)
-		{
-			objString += $"{reader.GetName(ordinal)}: `{reader.GetValue(ordinal)}`; ";
-		}
+// SQLSerializer.Update(TABLE_NAME, handle, updatedEmployees);
 
-		return objString;
-	}).Match(
+SQLSerializer.DeserializeAll<TestEmployee>(TABLE_NAME, handle).Match(
 	ok =>
 	{
 		foreach (var obj in ok)
 		{
-			ConsoleHelper.WriteMessage(obj);
+			ConsoleHelper.WriteMessage(obj.ToString());
 		}
 	},
 	fail =>

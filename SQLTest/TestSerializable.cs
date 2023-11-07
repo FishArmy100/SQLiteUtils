@@ -2,13 +2,14 @@
 using SQLiteUtils.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SQLTest
 {
-	class TestEmployee : ISQLSerializeable
+	internal class TestEmployee : ISQLSerializeable, ISQLUpdateable
 	{
 		public string FirstName;
 		public string LastName;
@@ -23,6 +24,11 @@ namespace SQLTest
 
 		public TestEmployee() : this("invalid", "invalid", 0) { }
 
+		public override string ToString()
+		{
+			return $"{FirstName}, {LastName}: = {Id}";
+		}
+
 		public static SchemaEntry GetEntry(string name)
 		{
 			return new SchemaEntry(name, new[]
@@ -33,9 +39,11 @@ namespace SQLTest
 			});
 		}
 
-		public void OnDeserialize(object[] data)
+		public void OnDeserialize(ref SQLiteDataReader reader)
 		{
-			throw new NotImplementedException();
+			FirstName = reader.GetString(0);
+			LastName = reader.GetString(1);
+			Id = reader.GetInt32(2);
 		}
 
 		public string[] OnSerialize()
@@ -46,6 +54,11 @@ namespace SQLTest
 				$"'{LastName}'",
 				$"{Id}"
 			};
+		}
+
+		public (string, string) GetId()
+		{
+			return ("id", Id.ToString());
 		}
 	}
 }
