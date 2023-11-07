@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Raucse;
+using SQLiteUtils.Schema;
 
 namespace SQLiteUtils
 {
@@ -26,6 +27,15 @@ namespace SQLiteUtils
 			m_Connection = connection;
 		}
 
+		public void BuildSchema(DBSchema schema)
+		{
+			foreach(SchemaEntry entry in schema.Entries)
+			{
+				var entryFeilds = entry.Feilds.Select(f => (f.SQLType, f.Name)).ToList();
+				this.ExecuteCommand(SQLCommandHelper.DropAndCreate(entry.Name, entryFeilds));
+			}
+		}
+
 		public int ExecuteCommand(string commandString)
 		{
 			m_Connection.Open();
@@ -38,7 +48,7 @@ namespace SQLiteUtils
 			return changedRows;
 		}
 
-		public Result<DBQueryResult, SQLiteException> ExecuteReadCommand(string commandString)
+		public Result<List<T>, SQLiteException> ExecuteReadCommand<T>(string commandString, Func<SQLiteDataReader, T> onRead)
 		{
 			m_Connection.Open();
 			using SQLiteCommand command = m_Connection.CreateCommand();
@@ -46,8 +56,13 @@ namespace SQLiteUtils
 			try
 			{
 				using SQLiteDataReader reader = command.ExecuteReader();
-				DBQueryResult result = new DBQueryResult(reader);
-				return result;
+				List<T> objs = new List<T>();
+				while (reader.Read())
+				{
+					objs.Add(onRead(reader));
+				}
+
+				return objs;
 			}
 			catch (SQLiteException e)
 			{

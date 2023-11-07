@@ -1,126 +1,80 @@
-﻿using Raucse;
-using Raucse.Strings;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Raucse.Extensions;
+using Raucse;
 
 namespace SQLiteUtils.Serialization
 {
 	public static class SQLSerializer
 	{
-		private class FieldData
+		public static string Serialize<T>(string tableName, IEnumerable<T> items) where T : ISQLSerializeable
 		{
-			public readonly string Name;
-			public readonly FieldType Type;
-			public readonly Option<uint> CustomStringCapacity;
-			public readonly object Value;
-
-			private FieldData(string name, FieldType type, Option<uint> customStrCap, object value)
+			string s = string.Empty;
+			foreach (T item in items)
 			{
-				Name = name;
-				Type = type;
-				CustomStringCapacity = customStrCap;
-				Value = value;
+				string values = item.OnSerialize().Concat(", ");
+				s += $"INSERT INTO {tableName} VALUES ({values});\n";
 			}
 
-			public static FieldData FromInfo(FieldInfo info, object parent)
-			{
-				var name = info.Name;
-				var type = FieldTypeUtils.FromCSType(info.FieldType).Value;
-				var attrib = info.GetCustomAttribute<SQLVarChar>();
-				Option<uint> customStrCap = new Option<uint>();
-				if (attrib is not null)
-					customStrCap = attrib.Size;
+			return s;
+		}
 
-				var value = info.GetValue(parent)!;
-				return new FieldData(name, type, customStrCap, value);
+		public static Option<SQLiteException> Serialize<T>(string tableName, DBHandle handle, IEnumerable<T> items) where T : ISQLSerializeable
+		{
+			string command = Serialize(tableName, items);
+			try
+			{
+				handle.ExecuteCommand(command);
+				return new Option<SQLiteException>();
+			}
+			catch(SQLiteException e)
+			{
+				return new Option<SQLiteException>(e);
 			}
 		}
 
-		public static string GetSerializeCommands<T>(string tableName, IEnumerable<T> data)
+		public static Option<SQLiteException> Update<T>(string tableName, DBHandle handle, IEnumerable<T> items)
+			where T : ISQLUpdateable
 		{
-			CheckType<T>();
-
-			List<List<FieldData>> dataFeilds = GetTableFields(data);
-			string[] tableColumns = GetTableColumns<T>();
-			string commands = string.Empty;
-			commands += string.Join("\n", dataFeilds.Select(d => CreateCommandString(tableName, d)));
-
-			return commands;
-		}
-
-		public static List<T> Deserialize<T>(DBQueryResult result)
-		{
-			CheckType<T>();
-
-		}
-
-		private static (FieldType, string)[] GetFeildNames<T>()
-		{
-			return typeof(T).GetFields()
-				.Where(f => f.GetCustomAttribute<SQLSerializableField>() != null)
-				.Select(f => (FieldTypeUtils.FromCSType(f.FieldType).Value, f.Name))
-				.ToArray();
-		}
-
-		private static string[] GetTableColumns<T>()
-		{
-			return GetFeildNames<T>()
-				.Select(f => $"{f.Item2} {f.Item1.ToSQLTypeName()}")
-				.ToArray();
-		}
-
-		private static List<List<FieldData>> GetTableFields<T>(IEnumerable<T> data)
-		{
-			return data.Select(obj =>
-							obj!.GetType()
-							.GetFields()
-							.Where(f => f.GetCustomAttribute<SQLSerializableField>() != null)
-							.Select(f => FieldData.FromInfo(f, obj)).ToList())
-							.ToList();
-		}
-
-		private static string CreateCommandString(string tableName, IEnumerable<FieldData> fields)
-		{
-			string[] valueNames = fields.Select(f => f.Name).ToArray();
-			string[] values = fields.Select(f => CreateValueString(f.Value, f.Type)).ToArray();
-
-			string command = $"INSERT INTO {tableName} ({string.Join(", ", valueNames)}) VALUES ({string.Join(", ", values)});";
-			return command;
-		}
-
-		private static string CreateValueString(object value, FieldType type)
-		{
-			return type switch
+			string commands = "";
+			foreach(T item in items)
 			{
-				FieldType.Int => $"'{(int)value}'",
-				FieldType.Long => $"'{(long)value}'",
-				FieldType.ULong => $"'{(ulong)value}'",
-				FieldType.String => $"'{(string)value}'",
-				FieldType.Float => $"'{(float)value}'",
-				FieldType.Double => $"'{(double)value}'",
-				FieldType.Bool => (bool)value ? "1" : "0",
-				FieldType.DateTime => throw new NotImplementedException(),
-				_ => throw new NotImplementedException(),
-			};
-		}
-
-		private static void CheckType<T>()
-		{
-			if (typeof(T).GetCustomAttribute<SQLSerializableObject>() == null)
-				throw new ArgumentException("Type '" + typeof(T).Name + "', must have the SQLSerializeableObject attribute.");
-
-			foreach(var field in typeof(T).GetFields())
-			{
-				if (field.GetCustomAttribute<SQLSerializableField>() == null)
-					throw new ArgumentException($"All feilds in type '{typeof(T).Name}' must be SQL Serializeable");
-
-				if (Nullable.GetUnderlyingType(typeof(T)) == null)
-					throw new ArgumentException($"All feilds in type '{typeof(T).Name}' must be nullable");
+				var (name, value) = item.GetId();
+				string delete = $"DELETE FROM {tableName} WHERE {name} = {value};";
+				string serialize = Serialize(tableName, items);
+				commands += $"{delete}\n{serialize}";
 			}
+
+			try
+			{
+				handle.ExecuteCommand(commands);
+				return new Option<SQLiteException>();
+			}
+			catch(SQLiteException e)
+			{
+				return new Option<SQLiteException>(e);
+			}
+		}
+
+		public static Result<List<T>, SQLiteException> Deserialize<T>(string selector, DBHandle handle) 
+			where T : ISQLSerializeable, new()
+		{
+			return handle.ExecuteReadCommand(selector, reader =>
+			{
+				T item = new T();
+				item.OnDeserialize(ref reader);
+				return item;
+			});
+		}
+
+		public static Result<List<T>, SQLiteException> DeserializeAll<T>(string tableName, DBHandle handle)
+			where T : ISQLSerializeable, new()
+		{
+			return Deserialize<T>(SQLCommandHelper.ReadAll(tableName), handle);
 		}
 	}
 }

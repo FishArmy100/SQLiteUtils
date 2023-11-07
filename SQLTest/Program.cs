@@ -1,34 +1,50 @@
 ﻿using Raucse;
 using Raucse.Strings;
 using SQLiteUtils;
+using SQLiteUtils.Schema;
+using SQLiteUtils.Serialization;
+using SQLTest;
 
 const string DB_NAME = "my_database";
-
-static string GetInsertCommand(string tableName) =>
-	$"CREATE TABLE IF NOT EXISTS {tableName} (name TEXT, id INTAGER);\n" +
-	$"INSERT INTO {tableName} (name, id) VALUES ('test guy', 37490);\n" +
-	$"SELECT * FROM {tableName}";
+const string TABLE_NAME = "test_table";
 
 DBHandle handle = new DBHandle(DB_NAME);
-string command = GetInsertCommand("test_table");
-handle.ExecuteReadCommand(command).Match(
+
+SchemaBuilder builder = new SchemaBuilder("my_schema");
+builder.AddEntry<TestEmployee>(TABLE_NAME);
+DBSchema schema = builder.Build();
+
+handle.BuildSchema(schema);
+
+var employees = new List<TestEmployee>
+{
+	new TestEmployee("bob", "dylen", 24),
+	new TestEmployee("issac", "rob", 32),
+	new TestEmployee("robbert", "grotten", 53)
+};
+
+var updatedEmployees = new List<TestEmployee>
+{
+	new TestEmployee("bob", "dylan", 24)
+};
+
+string insertCommand = SQLSerializer.Serialize(TABLE_NAME, employees);
+
+handle.ExecuteCommand(insertCommand);
+
+// SQLSerializer.Update(TABLE_NAME, handle, updatedEmployees);
+
+SQLSerializer.DeserializeAll<TestEmployee>(TABLE_NAME, handle).Match(
 	ok =>
 	{
-		foreach (var obj in ok.Objects)
+		foreach (var obj in ok)
 		{
-			foreach (var (name, field) in obj)
-			{
-				ConsoleHelper.WriteMessage($"column name: {name}; field type: {field.Type}; field value: {field.Value.Value}");
-			}
+			ConsoleHelper.WriteMessage(obj.ToString());
 		}
 	},
 	fail =>
 	{
 		StringMaker maker = new StringMaker();
-		maker.AppendLine("Source: ");
-		maker.TabIn(TabModes.Number);
-		maker.AppendLines(command.Split('\n'));
-		maker.TabOut();
 		maker.AppendLine("Error:");
 		maker.TabIn(TabModes.Bulleted);
 		maker.AppendLines(fail.Message.Split('\n'));
