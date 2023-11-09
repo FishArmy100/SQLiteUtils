@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Raucse;
 using SQLiteUtils.Schema;
+using Raucse.Extensions;
 
 namespace SQLiteUtils
 {
@@ -29,11 +30,15 @@ namespace SQLiteUtils
 
 		public void BuildSchema(DBSchema schema)
 		{
+			string commands = "";
 			foreach(SchemaEntry entry in schema.Entries)
 			{
-				var entryFeilds = entry.Feilds.Select(f => (f.SQLType, f.Name)).ToList();
-				this.ExecuteCommand(SQLCommandHelper.DropAndCreate(entry.Name, entryFeilds));
+				string deleteCommand = SQLCommandHelper.DropIfExists(entry.Name);
+				string createCommand = SQLCommandHelper.SchemaEntry(entry);
+				commands += $"{deleteCommand}\n{createCommand}\n";
 			}
+			
+			this.ExecuteCommand(commands);
 		}
 
 		public int ExecuteCommand(string commandString)

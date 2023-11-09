@@ -33,9 +33,9 @@ namespace SQLTest
 		{
 			return new SchemaEntry(name, new[]
 			{
-				new SchemaFeild("first_name", "VARCHAR(20)"),
-				new SchemaFeild("last_name", "VARCHAR(20)"),
-				new SchemaFeild("id", "INT")
+				new SchemaFeild.Basic("first_name", "VARCHAR(20)", true),
+				new SchemaFeild.Basic("last_name", "VARCHAR(20)", true),
+				new SchemaFeild.Basic("id", "INT", true)
 			});
 		}
 

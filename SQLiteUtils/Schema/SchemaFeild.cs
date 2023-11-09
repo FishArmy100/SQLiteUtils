@@ -6,15 +6,44 @@ using System.Threading.Tasks;
 
 namespace SQLiteUtils.Schema
 {
-	public class SchemaFeild
+	public abstract class SchemaFeild
 	{
-		public readonly string Name;
-		public readonly string SQLType;
-
-		public SchemaFeild(string name, string sqlType)
+		public class Basic : SchemaFeild
 		{
-			Name = name;
-			SQLType = sqlType;
+			public readonly string Name;
+			public readonly string SQLType;
+			public readonly bool IsNotNull;
+
+			public Basic(string name, string sqlType, bool isNotNull = false)
+			{
+				Name = name;
+				SQLType = sqlType;
+				IsNotNull = isNotNull;
+			}
+		}
+
+		public class PrimaryKey : SchemaFeild
+		{ 
+			public readonly string Name;
+
+			public PrimaryKey(string name)
+			{
+				Name = name;
+			}
+		}
+
+		public class ForeignKey : SchemaFeild
+		{
+			public readonly string Name;
+			public readonly string ForiegnName;
+			public readonly string ForeignTableName;
+
+			public ForeignKey(string name, string foriegnName, string foreignTableName)
+			{
+				Name = name;
+				ForiegnName = foriegnName;
+				ForeignTableName = foreignTableName;
+			}
 		}
 	}
 }

@@ -32,8 +32,6 @@ string insertCommand = SQLSerializer.Serialize(TABLE_NAME, employees);
 
 handle.ExecuteCommand(insertCommand);
 
-// SQLSerializer.Update(TABLE_NAME, handle, updatedEmployees);
-
 SQLSerializer.DeserializeAll<TestEmployee>(TABLE_NAME, handle).Match(
 	ok =>
 	{

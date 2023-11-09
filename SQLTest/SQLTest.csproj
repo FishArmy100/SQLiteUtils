@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AccountingDatabaseBackend\AccountingDatabaseBackend.csproj" />
     <ProjectReference Include="..\SQLiteUtils\SQLiteUtils.csproj" />
   </ItemGroup>
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Raucse.Extensions;
+using SQLiteUtils.Schema;
 
 namespace SQLiteUtils
 {
@@ -14,6 +15,22 @@ namespace SQLiteUtils
 		{
 			string sqlFeilds = feilds.Select(f => $"{f.Item2} {f.Item1}").Concat(", ");
 			return $"CREATE TABLE IF NOT EXISTS {tableName} ({sqlFeilds});";
+		}
+
+		public static string GenerateSchemaEntry(SchemaEntry entry)
+		{
+			var records = entry.Feilds.Select(f =>
+			{
+				return f switch
+				{
+					SchemaFeild.Basic b => $"{b.Name} {b.SQLType}" + (b.IsNotNull ? "NOT NULL" : ""),
+					SchemaFeild.PrimaryKey pk => $"PRIMARY KEY ({pk.Name})",
+					SchemaFeild.ForeignKey fk => $"FOREIGN KEY ({fk.Name}) REFERENCES {fk.ForeignTableName}({fk.ForiegnName})",
+					_ => throw new NotImplementedException()
+				};
+			}).Select(r => "\t" + r).Concat(",\n");
+
+			return $"CREATE TABLE {entry.Name}(\n{records}\n);";
 		}
 
 		public static string DropAndCreate(string tableName, IEnumerable<(string, string)> feilds)
