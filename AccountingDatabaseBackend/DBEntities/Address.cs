@@ -35,7 +35,7 @@ namespace AccountingDatabaseBackend.DBEntities
 				new SchemaFeild.Basic(nameof(street), "VARCHAR(30)"),
 				new SchemaFeild.Basic(nameof(id), "INT"),
 				new SchemaFeild.PrimaryKey(nameof(id)),
-			});;
+			});
 		}
 
 		public (string, string) GetId()

@@ -9,7 +9,7 @@ using SQLiteUtils.Serialization;
 
 namespace AccountingDatabaseBackend.DBEntities
 {
-	internal class Employee : ISQLUpdateable
+	public class Employee : ISQLUpdateable
 	{
 		public int id;
 		public string first_name;
@@ -52,17 +52,34 @@ namespace AccountingDatabaseBackend.DBEntities
 
 		public (string, string) GetId()
 		{
-			throw new NotImplementedException();
+			return (nameof(id), id.ToString());
 		}
 
 		public void OnDeserialize(ref SQLiteDataReader reader)
 		{
-			throw new NotImplementedException();
+			id = reader.GetInt32(0);
+			first_name = reader.GetString(1);
+			last_name = reader.GetString(2);
+			ssn = reader.GetString(3);
+			payrate = reader.GetFloat(4);
+			fileing_status = reader.GetString(5);
+			num_dependants = reader.GetInt32(6);
+			address_id = reader.GetInt32(7);
 		}
 
 		public string[] OnSerialize()
 		{
-			throw new NotImplementedException();
+			return new string[]
+			{
+				id.ToString(),
+				$"'{first_name}'",
+				$"'{last_name}'",
+				$"'{ssn}'",
+				payrate.ToString(),
+				$"'{fileing_status}'",
+				num_dependants.ToString(),
+				address_id.ToString(),
+			};
 		}
 	}
 }
