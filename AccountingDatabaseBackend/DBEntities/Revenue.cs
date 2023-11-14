@@ -18,7 +18,7 @@ namespace AccountingDatabaseBackend.DBEntities
         // Primary key
         public int transaction_id;
         public int ledger_id;
-        public int employee_id;
+        public int entering_employee_id;
         public int receipt_number;
 
         public Revenue()
@@ -36,7 +36,7 @@ namespace AccountingDatabaseBackend.DBEntities
             this.description = description;
             this.transaction_id = transaction_id;
             this.ledger_id = ledger_id;
-            this.employee_id = employee_id;
+            this.entering_employee_id = employee_id;
             this.receipt_number = receipt_number;
         }
 
@@ -51,11 +51,11 @@ namespace AccountingDatabaseBackend.DBEntities
 
                 new SchemaFeild.Basic(nameof(transaction_id), "INT"),
                 new SchemaFeild.Basic(nameof(ledger_id), "INT"),
-                new SchemaFeild.Basic(nameof(employee_id), "INT"),
+                new SchemaFeild.Basic(nameof(entering_employee_id), "INT"),
                 new SchemaFeild.Basic(nameof(receipt_number), "INT"),
 
                 new SchemaFeild.PrimaryKey(nameof(transaction_id)),
-                new SchemaFeild.ForeignKey(nameof(employee_id), DBTableNames.EMPLOYEE_TABLE_NAME, nameof(Employee.id)),
+                new SchemaFeild.ForeignKey(nameof(entering_employee_id), DBTableNames.EMPLOYEE_TABLE_NAME, nameof(Employee.id)),
                 new SchemaFeild.ForeignKey(nameof(receipt_number), DBTableNames.RECEIPTS_TABLE_NAME, nameof(Receipt.receipt_number))
             });
         }
@@ -73,7 +73,7 @@ namespace AccountingDatabaseBackend.DBEntities
             description = reader.GetString(3);
             transaction_id = reader.GetInt32(4);
             ledger_id = reader.GetInt32(5);
-            employee_id = reader.GetInt32(6);
+            entering_employee_id = reader.GetInt32(6);
             receipt_number = reader.GetInt32(7);
         }
 
@@ -87,7 +87,7 @@ namespace AccountingDatabaseBackend.DBEntities
                 $"'{description}'",
                 transaction_id.ToString(),
                 ledger_id.ToString(),
-                employee_id.ToString(),
+                entering_employee_id.ToString(),
                 receipt_number.ToString(),
             };
         }
