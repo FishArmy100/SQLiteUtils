@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Raucse;
 using SQLiteUtils.Schema;
 using Raucse.Extensions;
+using ConsoleTables;
 
 namespace SQLiteUtils
 {
@@ -51,6 +52,22 @@ namespace SQLiteUtils
 			m_Connection.Close();
 
 			return changedRows;
+		}
+
+		public Result<ConsoleTable, SQLiteException> DebugRead(string commandString)
+		{
+			m_Connection.Open();
+			using SQLiteCommand command = m_Connection.CreateCommand();
+			command.CommandText = commandString;
+			try
+			{
+				using SQLiteDataReader reader = command.ExecuteReader();
+
+			}
+			catch (SQLiteException e)
+			{
+				return e;
+			}
 		}
 
 		public Result<List<T>, SQLiteException> ExecuteReadCommand<T>(string commandString, Func<SQLiteDataReader, T> onRead)
