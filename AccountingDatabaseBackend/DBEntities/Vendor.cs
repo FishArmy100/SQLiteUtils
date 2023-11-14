@@ -1,4 +1,6 @@
-﻿using SQLiteUtils.Schema;
+﻿using Bogus;
+using Bogus.Extensions.UnitedStates;
+using SQLiteUtils.Schema;
 using SQLiteUtils.Serialization;
 using System;
 using System.Collections.Generic;
@@ -32,6 +34,21 @@ namespace AccountingDatabaseBackend.DBEntities
             this.phone_number = phone_number;
             this.ein = ein;
             this.address_id = address_id;
+        }
+
+        public static List<(Vendor, Address)> GenerateRandom(int count)
+        {
+            var addresses = Address.CreateRandom(count);
+
+            var vendors = new Faker<Vendor>()
+                .StrictMode(true)
+                .RuleFor(v => v.vendor_id, f => f.IndexGlobal)
+                .RuleFor(v => v.vendor_name, f => f.Company.CompanyName())
+                .RuleFor(v => v.phone_number, f => f.Person.Phone)
+                .RuleFor(v => v.ein, f => f.Company.Ein())
+                .RuleFor(v => v.address_id, f => addresses[f.IndexFaker].id);
+
+            return vendors.Generate(count).Zip(addresses).ToList();
         }
 
         public static SchemaEntry GetEntry(string name)

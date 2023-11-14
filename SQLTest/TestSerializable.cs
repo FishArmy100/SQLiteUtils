@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SQLTest
 {
-	internal class TestEmployee : ISQLSerializeable, ISQLUpdateable
+	internal class TestEmployee : ISQLUpdateable
 	{
 		public string FirstName;
 		public string LastName;

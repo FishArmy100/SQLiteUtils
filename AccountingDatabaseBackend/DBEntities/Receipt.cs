@@ -1,4 +1,5 @@
-﻿using SQLiteUtils.Schema;
+﻿using Bogus;
+using SQLiteUtils.Schema;
 using SQLiteUtils.Serialization;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,17 @@ namespace AccountingDatabaseBackend.DBEntities
             this.receipt_number = receipt_number;
             this.amount = amount;
             this.date = date;
+        }
+
+        public static List<Receipt> GenerateRandom(int count)
+        {
+            var receipts = new Faker<Receipt>()
+                .StrictMode(true)
+                .RuleFor(r => r.receipt_number, f => f.IndexGlobal)
+                .RuleFor(r => r.amount, f => f.Random.Float(10.0f, 100_000_000_000.0f))
+                .RuleFor(r => r.date, RandomUtils.RandomDate);
+
+            return receipts.Generate(count);
         }
 
         public static SchemaEntry GetEntry(string name)

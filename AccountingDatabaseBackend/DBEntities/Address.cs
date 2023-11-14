@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
+using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
+using Bogus;
 using SQLiteUtils.Schema;
 using SQLiteUtils.Serialization;
 
@@ -24,6 +26,18 @@ namespace AccountingDatabaseBackend.DBEntities
 			this.state = state;
 			this.street = street;
 			this.id = id;
+		}
+
+		public static List<Address> CreateRandom(int count)
+		{
+			var addresses = new Faker<Address>()
+				.StrictMode(true)
+				.RuleFor(a => a.id, f => f.UniqueIndex)
+				.RuleFor(a => a.city, f => f.Address.City())
+				.RuleFor(a => a.street, f => f.Address.StreetAddress())
+				.RuleFor(a => a.state, f => f.Address.State());
+
+			return addresses.Generate(count);
 		}
 
 		public static SchemaEntry GetEntry(string name)

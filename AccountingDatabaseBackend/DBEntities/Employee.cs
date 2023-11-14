@@ -4,6 +4,8 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bogus;
+using Bogus.Extensions.UnitedStates;
 using SQLiteUtils.Schema;
 using SQLiteUtils.Serialization;
 
@@ -19,6 +21,32 @@ namespace AccountingDatabaseBackend.DBEntities
 		public string fileing_status;
 		public int num_dependants;
 		public int address_id;
+
+		public Employee()
+		{
+			first_name = string.Empty;
+			last_name = string.Empty;
+			ssn = string.Empty;
+			fileing_status = string.Empty;
+		}
+
+		public static List<(Employee, Address)> CreateRandom(int count)
+		{
+			var addresses = Address.CreateRandom(count);
+
+			var employees = new Faker<Employee>()
+				.StrictMode(true)
+				.RuleFor(e => e.id, f => f.IndexGlobal)
+				.RuleFor(e => e.first_name, f => f.Person.FirstName)
+				.RuleFor(e => e.last_name, f => f.Person.LastName)
+				.RuleFor(e => e.ssn, f => f.Person.Ssn())
+				.RuleFor(e => e.payrate, f => f.Random.Float(10.5f, 10000.0f))
+				.RuleFor(e => e.fileing_status, f => f.Random.Bool() ? "single" : "married")
+				.RuleFor(e => e.num_dependants, f => f.Random.Int(0, 10))
+				.RuleFor(e => e.address_id, f => addresses[f.IndexFaker].id);
+
+			return employees.Generate(count).Zip(addresses).ToList();
+		}
 
 		public Employee(int id, string first_name, string last_name, string ssn, float payrate, string fileing_status, int num_dependants, int address_id)
 		{

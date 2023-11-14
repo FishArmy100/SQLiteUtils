@@ -14,5 +14,7 @@ namespace AccountingDatabaseBackend
 		public const string VENDOR_TABLE_NAME = "Vendors";
 		public const string CHECK_TABLE_NAME = "Checks";
 		public const string EXPENSE_TABLE_NAME = "Expenses";
+		public const string BUDGET_REPORT_TABLE_NAME = "BudgetReports";
+		public const string REVENUE_TABLE_NAME = "Revenues";
 	}
 }
