@@ -8,7 +8,7 @@ namespace AccountingDatabaseBackend
 {
 	public static class DBTableNames
 	{
-		public const string ADDRESS_TABLE_NAME = "Address";
+		public const string ADDRESS_TABLE_NAME = "Addresses";
 		public const string EMPLOYEE_TABLE_NAME = "Employees";
 		public const string RECEIPTS_TABLE_NAME = "Receipts";
 		public const string VENDOR_TABLE_NAME = "Vendors";

@@ -30,6 +30,9 @@ namespace AccountingDatabaseBackend
 
         public static void InitTestDB(DBHandle handle)
         {
+            DBSchema schema = CreateSchema();
+            handle.BuildSchema(schema);
+
             List<Address> addresses = new List<Address>();
             List<BudgetReport> reports = new List<BudgetReport>();
             List<Check> checks = new List<Check>();

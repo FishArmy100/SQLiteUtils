@@ -35,7 +35,7 @@ namespace SQLiteUtils
 			foreach(SchemaEntry entry in schema.Entries)
 			{
 				string deleteCommand = SQLCommandHelper.DropIfExists(entry.Name);
-				string createCommand = SQLCommandHelper.SchemaEntry(entry);
+				string createCommand = SQLCommandHelper.GenerateSchemaEntry(entry);
 				commands += $"{deleteCommand}\n{createCommand}\n";
 			}
 			
@@ -63,6 +63,34 @@ namespace SQLiteUtils
 			{
 				using SQLiteDataReader reader = command.ExecuteReader();
 
+
+				List<string> columns = new List<string>();
+				for (int i = 0; i < reader.FieldCount; i++)
+				{
+					columns.Add(reader.GetName(i).ToUpper());
+				}
+
+
+				ConsoleTable table = new ConsoleTable(columns.ToArray());
+				while (reader.Read())
+				{
+					List<string> row = new List<string>();
+					for (int i = 0; i < reader.FieldCount; i++)
+					{
+						string value = reader.GetValue(i) switch
+						{
+							string s => $"\"{s}\"",
+							object o => o.ToString()!,
+							null => "null"
+						};
+
+						row.Add(value);
+					}
+
+					table.AddRow(row.Select(v => v as object).ToArray());
+				}
+
+				return table;
 			}
 			catch (SQLiteException e)
 			{

@@ -16,7 +16,7 @@ namespace AccountingDatabaseBackend
 
         public static T RandomFrom<T>(this List<T> self, Faker f)
         {
-            return self[f.Random.Int(0, self.Count)];
+            return self[f.Random.Int(0, self.Count - 1)];
         }
     }
 }

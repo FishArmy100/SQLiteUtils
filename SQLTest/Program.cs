@@ -1,4 +1,6 @@
-﻿using Raucse;
+﻿using AccountingDatabaseBackend;
+using ConsoleTables;
+using Raucse;
 using Raucse.Strings;
 using SQLiteUtils;
 using SQLiteUtils.Schema;
@@ -6,39 +8,18 @@ using SQLiteUtils.Serialization;
 using SQLTest;
 
 const string DB_NAME = "my_database";
-const string TABLE_NAME = "test_table";
 
 DBHandle handle = new DBHandle(DB_NAME);
+ApplicationSchema.InitTestDB(handle);
 
-SchemaBuilder builder = new SchemaBuilder("my_schema");
-builder.AddEntry<TestEmployee>(TABLE_NAME);
-DBSchema schema = builder.Build();
 
-handle.BuildSchema(schema);
-
-var employees = new List<TestEmployee>
-{
-	new TestEmployee("bob", "dylen", 24),
-	new TestEmployee("issac", "rob", 32),
-	new TestEmployee("robbert", "grotten", 53)
-};
-
-var updatedEmployees = new List<TestEmployee>
-{
-	new TestEmployee("bob", "dylan", 24)
-};
-
-string insertCommand = SQLSerializer.Serialize(TABLE_NAME, employees);
-
-handle.ExecuteCommand(insertCommand);
-
-SQLSerializer.DeserializeAll<TestEmployee>(TABLE_NAME, handle).Match(
+handle.DebugRead(SQLCommandHelper.ReadAll(DBTableNames.EMPLOYEE_TABLE_NAME)).Match(
 	ok =>
 	{
-		foreach (var obj in ok)
-		{
-			ConsoleHelper.WriteMessage(obj.ToString());
-		}
+		using TextWriter writer = new StringWriter();
+		ok.Options.OutputTo = writer;
+		ok.Write(Format.Alternative);
+		ConsoleHelper.WriteMessage(writer.ToString());
 	},
 	fail =>
 	{
